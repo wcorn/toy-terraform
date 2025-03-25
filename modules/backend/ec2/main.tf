@@ -1,4 +1,4 @@
-# BE ALB용 보안 그룹: HTTP 80 포트 오픈
+# BE ALB용 보안 그룹
 resource "aws_security_group" "backend_alb_sg" {
   name        = "backend_alb_sg"
   description = "Allow HTTP inbound traffic"

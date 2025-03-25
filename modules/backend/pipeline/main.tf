@@ -27,12 +27,12 @@ resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
   }
 }
 
-# 2. ECR Repository: Docker Image 업로드
+# ECR Repository
 resource "aws_ecr_repository" "backend_repo" {
   name = "backend-springboot"
 }
 
-# 3. IAM Role 및 Policy: CodeBuild (Spring Boot Backend - Docker Build)
+# IAM Role 및 Policy: CodeBuild
 resource "aws_iam_role" "codebuild_backend_role" {
   name = "codebuild-backend-role"
   assume_role_policy = jsonencode({
@@ -44,7 +44,6 @@ resource "aws_iam_role" "codebuild_backend_role" {
     }]
   })
 }
-
 resource "aws_iam_policy" "codebuild_backend_policy" {
   name        = "codebuild-backend-policy"
   description = "Policy for CodeBuild project for Spring Boot backend"
@@ -73,18 +72,16 @@ resource "aws_iam_policy" "codebuild_backend_policy" {
     ]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "codebuild_backend_policy_attach" {
   role       = aws_iam_role.codebuild_backend_role.name
   policy_arn = aws_iam_policy.codebuild_backend_policy.arn
 }
 
-# ECR 접근을 위한 AWS 관리형 정책 부착
+# ECR 접근을 위한 AWS 관리형 정책
 resource "aws_iam_role_policy_attachment" "codebuild_ecr_policy_attach" {
   role       = aws_iam_role.codebuild_backend_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
-# ECR 접근을 위한 IAM 역할 생성
 resource "aws_iam_role" "ecr_role" {
   name = "ecr-access-role"
   assume_role_policy = jsonencode({
@@ -93,15 +90,13 @@ resource "aws_iam_role" "ecr_role" {
       {
         Effect = "Allow",
         Principal = {
-          Service = "ecs-tasks.amazonaws.com" # ECS 태스크, CodeBuild 등 사용 시 적절히 변경 가능
+          Service = "ecs-tasks.amazonaws.com"
         },
         Action = "sts:AssumeRole"
       }
     ]
   })
 }
-
-# ECR 작업(이미지 푸시, 풀 등)에 필요한 권한을 부여하는 커스텀 정책 생성
 resource "aws_iam_policy" "ecr_policy" {
   name        = "ecr-access-policy"
   description = "Policy granting necessary permissions to access and push to ECR"
@@ -125,19 +120,17 @@ resource "aws_iam_policy" "ecr_policy" {
           "ecr:PutImage",
           "ecr:UploadLayerPart"
         ],
-        Resource = "*" # 특정 리포지토리 ARN으로 제한할 수도 있음
+        Resource = "*"
       }
     ]
   })
 }
-
-# 생성한 정책을 역할에 연결
 resource "aws_iam_role_policy_attachment" "ecr_role_policy_attach" {
   role       = aws_iam_role.ecr_role.name
   policy_arn = aws_iam_policy.ecr_policy.arn
 }
 
-# 4. CodeBuild Project: Backend Build (Docker Image Build & Push)
+# CodeBuild Project: Backend Build
 resource "aws_codebuild_project" "backend_build" {
   name           = "backend-build-project"
   description    = "Build project for Spring Boot backend application with Docker"
@@ -146,7 +139,6 @@ resource "aws_codebuild_project" "backend_build" {
   source_version = "main"
 
   artifacts {
-    # CodeDeploy가 사용할 appspec.yml 파일 (소스에 포함되어 있거나 빌드 중 생성)
     type = "CODEPIPELINE"
   }
 
@@ -184,9 +176,7 @@ resource "aws_codebuild_project" "backend_build" {
   }
 }
 
-###########################################
-# 5. IAM Role 및 Policy: CodePipeline 설정
-###########################################
+# IAM Role 및 Policy: CodePipeline
 resource "aws_iam_role" "codepipeline_backend_role" {
   name = "codepipeline-backend-role"
   assume_role_policy = jsonencode({
@@ -198,7 +188,6 @@ resource "aws_iam_role" "codepipeline_backend_role" {
     }]
   })
 }
-
 resource "aws_iam_policy" "codepipeline_backend_policy" {
   name        = "codepipeline-backend-policy"
   description = "Policy for CodePipeline for backend deployment"
@@ -239,20 +228,12 @@ resource "aws_iam_policy" "codepipeline_backend_policy" {
     ]
   })
 }
-
-resource "aws_iam_role_policy_attachment" "codedeploy_backend_role_attach" {
-  role       = aws_iam_role.codedeploy_backend_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-}
-
 resource "aws_iam_role_policy_attachment" "codepipeline_backend_policy_attach" {
   role       = aws_iam_role.codepipeline_backend_role.name
   policy_arn = aws_iam_policy.codepipeline_backend_policy.arn
 }
 
-###########################################
-# 6. IAM Role 및 Policy: CodeDeploy 설정
-###########################################
+# IAM Role 및 Policy: CodeDeploy 설정
 resource "aws_iam_role" "codedeploy_backend_role" {
   name = "codedeploy-backend-role"
   assume_role_policy = jsonencode({
@@ -264,7 +245,6 @@ resource "aws_iam_role" "codedeploy_backend_role" {
     }]
   })
 }
-
 resource "aws_iam_policy" "codedeploy_autoscaling_policy" {
   name        = "codedeploy-autoscaling-policy"
   description = "Policy granting CodeDeploy permission to complete autoscaling lifecycle actions"
@@ -279,30 +259,28 @@ resource "aws_iam_policy" "codedeploy_autoscaling_policy" {
     ]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "codedeploy_autoscaling_policy_attach" {
   role       = aws_iam_role.codedeploy_backend_role.name
   policy_arn = aws_iam_policy.codedeploy_autoscaling_policy.arn
 }
-###########################################
-# 7. GitHub Connection (CodeStar)
-###########################################
+resource "aws_iam_role_policy_attachment" "codedeploy_backend_role_attach" {
+  role       = aws_iam_role.codedeploy_backend_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+}
+
+# GitHub Connection (CodeStar)
 resource "aws_codestarconnections_connection" "github" {
   name          = "wcorn"
   provider_type = "GitHub"
 }
 
-###########################################
-# 8. CodeDeploy: Application 및 Deployment Group
-###########################################
+# CodeDeploy: Application 및 Deployment Group
 resource "aws_codedeploy_app" "backend_deploy_app" {
   name             = "backend-codedeploy-app"
   compute_platform = "Server"
 }
 
-####################################
 # ALB용 보안 그룹 (HTTP 80 포트 오픈)
-####################################
 resource "aws_security_group" "alb_deploy_sg" {
   name        = "alb_sg"
   description = "Allow inbound HTTP traffic for ALB"
@@ -323,9 +301,7 @@ resource "aws_security_group" "alb_deploy_sg" {
   }
 }
 
-####################################
-# ALB 생성 (Application Load Balancer)
-####################################
+# Deploy ALB 
 resource "aws_lb" "backend_deploy_alb" {
   name               = "backend-deploy-alb"
   load_balancer_type = "application"
@@ -333,9 +309,7 @@ resource "aws_lb" "backend_deploy_alb" {
   security_groups    = [aws_security_group.alb_deploy_sg.id]
 }
 
-####################################
-# ALB Target Group 생성 (예: 포트 8080)
-####################################
+# Deploy ALB Target Group
 resource "aws_lb_target_group" "backend_deploy_tg" {
   name     = "backend-deploy-tg"
   port     = 8080
@@ -352,9 +326,7 @@ resource "aws_lb_target_group" "backend_deploy_tg" {
   }
 }
 
-####################################
-# ALB Listener 생성 (HTTP 80 포트)
-####################################
+# Deploy ALB Listener
 resource "aws_lb_listener" "backend_deploy_listener" {
   load_balancer_arn = aws_lb.backend_deploy_alb.arn
   port              = 80
@@ -366,18 +338,13 @@ resource "aws_lb_listener" "backend_deploy_listener" {
   }
 }
 
-
 resource "aws_codedeploy_deployment_group" "backend_deployment_group" {
   app_name              = aws_codedeploy_app.backend_deploy_app.name
   deployment_group_name = "backend-deployment-group"
   service_role_arn      = aws_iam_role.codedeploy_backend_role.arn
-
-  # 기존에 생성한 Auto Scaling Group을 지정 (EC2 인스턴스 대상)
   autoscaling_groups = [var.backend_asg]
 
-  # blue/green 배포 방식을 사용하여 ALB와 연계
   blue_green_deployment_config {
-    # 배포 성공 후 기존(blue) 인스턴스 종료 설정
     terminate_blue_instances_on_deployment_success {
       action                           = "TERMINATE"
       termination_wait_time_in_minutes = 5
@@ -387,7 +354,6 @@ resource "aws_codedeploy_deployment_group" "backend_deployment_group" {
     }
   }
 
-  # ALB 설정: target group과 listener를 지정하여 배포 시 트래픽 전환을 관리
   load_balancer_info {
     elb_info {
       name = aws_lb.backend_deploy_alb.name
@@ -395,7 +361,7 @@ resource "aws_codedeploy_deployment_group" "backend_deployment_group" {
   }
 }
 
-# 9. CodePipeline: CI/CD 파이프라인 구성 (Backend)
+# CodePipeline: CI/CD 파이프라인 구성 (Backend)
 resource "aws_codepipeline" "backend_pipeline" {
   name          = "backend-codepipeline"
   pipeline_type = "V2"
