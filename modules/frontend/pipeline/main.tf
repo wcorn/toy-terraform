@@ -1,6 +1,7 @@
 # FE Pipeline Artifact 저장소 S3
 resource "aws_s3_bucket" "codepipeline_fe_bucket" {
-  bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}" 
+  bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}"
+  force_destroy = true
 }
 resource "random_id" "bucket_suffix" {
   byte_length = 4

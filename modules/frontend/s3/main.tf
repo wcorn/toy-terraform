@@ -1,6 +1,7 @@
 # FE 정적 웹호스팅 S3
 resource "aws_s3_bucket" "static_site" {
   bucket = "peter-frontend-ds3szlfa9q"  # 고유한 버킷 이름 사용
+  force_destroy = true
 }
 
 # FE S3 private ACL 지정

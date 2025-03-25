@@ -67,4 +67,5 @@ resource "aws_db_instance" "mydb" {
   publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.database.id]
   db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
+  skip_final_snapshot    = true  # terraform destroy 편하게 하려는 이유 실제 환경에서는 절대 금지
 }

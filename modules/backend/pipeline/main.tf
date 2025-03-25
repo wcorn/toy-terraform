@@ -5,6 +5,7 @@ resource "random_id" "bucket_suffix" {
 
 resource "aws_s3_bucket" "codepipeline_backend_bucket" {
   bucket = "codepipeline-artifact-bucket-backend-${random_id.bucket_suffix.hex}"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "backend_bucket_oc" {
