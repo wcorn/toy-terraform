@@ -1,8 +1,10 @@
+# 버지니아 북부 리전
 provider "aws" {
   alias  = "alias_us_east_1"
   region = "us-east-1"
 }
 
+# 서울 리전
 provider "aws" {
   alias  = "alias_seoul"
   region = "ap-northeast-2"
@@ -79,6 +81,7 @@ resource "aws_acm_certificate_validation" "cert_validation_seoul" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
+# Route53에 FE Record 추가 (CloueFront 연결)
 resource "aws_route53_record" "alias_fe_record" {
   zone_id = data.aws_route53_zone.public.zone_id
   name    = var.fe_domain_name
@@ -91,6 +94,7 @@ resource "aws_route53_record" "alias_fe_record" {
   }
 }
 
+# Route53에 BE Record 추가 (BE ALB 연결)
 resource "aws_route53_record" "alias_be_ecord" {
   zone_id = data.aws_route53_zone.public.zone_id
   name    = var.be_domain_name

@@ -1,3 +1,4 @@
+# terraform provider 버전 지정
 terraform {
   required_version = ">= 0.12"
   required_providers {
@@ -14,8 +15,9 @@ terraform {
       version = "~> 4.0"
     }
   }
-}
+} 
 
+# AWS Provider
 provider "aws" {
   region = var.aws_region
 }

@@ -21,6 +21,7 @@ variable "vpn_client_cidr" {
 }
 
 variable "openvpn_ingress_rules" {
+  description = "OpenVPN 보안그룹 ingress 규칙"
   type = map(object({
     from_port   = number
     to_port     = number
@@ -37,6 +38,7 @@ variable "openvpn_ingress_rules" {
 }
 
 variable "openvpn_egress_rules" {
+  description = "OpenVPN 보안그룹 egress 규칙"
   type = map(object({
     from_port   = number
     to_port     = number

@@ -1,10 +1,11 @@
-# OpenVPN 서버용 보안 그룹
+# OpenVPN  보안 그룹
 resource "aws_security_group" "openvpn_sg" {
   name        = "openvpn-security-group"
   description = "Security group for OpenVPN server"
   vpc_id      = var.vpc_id
 }
 
+# OpenVPN 보안그룹 ingress 규칙 
 resource "aws_security_group_rule" "openvpn_ingress_rule" {
   for_each = var.openvpn_ingress_rules
 
@@ -16,6 +17,7 @@ resource "aws_security_group_rule" "openvpn_ingress_rule" {
   security_group_id = aws_security_group.openvpn_sg.id
 }
 
+# OpenVPN 보안그룹 egress 규칙 
 resource "aws_security_group_rule" "openvpn_egress_rule" {
   for_each = var.openvpn_egress_rules
 
@@ -32,12 +34,10 @@ resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
-
 resource "aws_key_pair" "openvpn" {
   key_name   = "openvpn_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
-
 resource "local_file" "private_key" {
   filename        = "openvpn_key.pem"
   content         = tls_private_key.ssh_key.private_key_pem

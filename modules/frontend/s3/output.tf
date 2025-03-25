@@ -1,9 +1,6 @@
 output "fe_bucket" {
+  description = "FE 버킷"
   value = aws_s3_bucket.static_site.bucket
-}
-
-output "fe_cdn" {
-  value = aws_cloudfront_distribution.cdn
 }
 
 output "fe_cdn_domain_name" {

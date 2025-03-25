@@ -1,19 +1,15 @@
-provider "aws" {
-  alias  = "alias_us_east_1"
-  region = "us-east-1"
-}
-# S3 버킷 생성 (정적 콘텐츠 저장, public access 차단)
+# FE 정적 웹호스팅 S3
 resource "aws_s3_bucket" "static_site" {
   bucket = "peter-frontend-ds3szlfa9q"  # 고유한 버킷 이름 사용
 }
 
+# FE S3 private ACL 지정
 resource "aws_s3_bucket_ownership_controls" "static_site_oc" {
   bucket = aws_s3_bucket.static_site.id
   rule {
     object_ownership = "BucketOwnerPreferred"
   }
 }
-
 resource "aws_s3_bucket_acl" "static_site_acl" {
   depends_on = [aws_s3_bucket_ownership_controls.static_site_oc]
 
@@ -21,7 +17,7 @@ resource "aws_s3_bucket_acl" "static_site_acl" {
   acl    = "private"
 }
 
-# static web public 접근
+# static web public 접근 차단
 resource "aws_s3_bucket_public_access_block" "static_site_access_block" {
   bucket = aws_s3_bucket.static_site.id
 
@@ -117,11 +113,13 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
+# S3와 CloudFront 연결 (CloudFront에 S3 Get 권한 부여)
 resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
   bucket = aws_s3_bucket.static_site.id
   policy = data.aws_iam_policy_document.allow_access_from_another_account.json
 }
 
+# CloudFront의 Fe S3의 Get 권한 조회
 data "aws_iam_policy_document" "allow_access_from_another_account" {
   statement {
     principals {
@@ -148,7 +146,7 @@ data "aws_iam_policy_document" "allow_access_from_another_account" {
   }
 }
 
-# s3 버전 관리 활성화
+# FE S3 버전 관리 활성화
 resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
   bucket = aws_s3_bucket.static_site.id
   versioning_configuration {

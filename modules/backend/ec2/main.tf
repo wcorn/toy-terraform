@@ -1,4 +1,4 @@
-# ALB용 보안 그룹: HTTP 80 포트 오픈
+# BE ALB용 보안 그룹: HTTP 80 포트 오픈
 resource "aws_security_group" "backend_alb_sg" {
   name        = "backend_alb_sg"
   description = "Allow HTTP inbound traffic"
@@ -19,7 +19,7 @@ resource "aws_security_group" "backend_alb_sg" {
   }
 }
 
-# EC2 인스턴스용 보안 그룹: ALB에서 오는 트래픽 허용 (8080 포트)
+# BE 인스턴스용 보안 그룹: ALB에서 오는 트래픽 허용 (8080 포트)
 resource "aws_security_group" "backend_sg" {
   name        = "backend_sg"
   description = "Allow traffic from ALB"
@@ -47,7 +47,7 @@ resource "aws_security_group" "backend_sg" {
   }
 }
 
-# Application Load Balancer 생성
+# BE ALB
 resource "aws_lb" "backend_alb" {
   name               = "backend-alb"
   load_balancer_type = "application"
@@ -55,7 +55,7 @@ resource "aws_lb" "backend_alb" {
   security_groups    = [aws_security_group.backend_alb_sg.id]
 }
 
-# ALB Target Group 설정 (포트 8080)
+# BE ALB Target Group (포트 8080)
 resource "aws_lb_target_group" "backend_tg" {
   name     = "back-tg"
   port     = 8080
@@ -72,7 +72,7 @@ resource "aws_lb_target_group" "backend_tg" {
   }
 }
 
-# ALB Listener: 443 포트에 요청이 오면 Target Group으로 포워딩
+# BE ALB Listener (포트 443)
 resource "aws_lb_listener" "backend_listener" {
   load_balancer_arn = aws_lb.backend_alb.arn
   port              = 443
@@ -85,24 +85,22 @@ resource "aws_lb_listener" "backend_listener" {
   }
 }
 
-# SSH Key 생성 (TLS provider 사용)
+# BE SSH Key
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
-
 resource "aws_key_pair" "backend_key" {
   key_name   = "backend_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
-
 resource "local_file" "private_backend_key" {
   filename        = "backend_key.pem"
   content         = tls_private_key.ssh_key.private_key_pem
   file_permission = "0600"
 }
 
-# EC2 인스턴스 런치 템플릿 (Amazon Linux 2 AMI 사용, docker 설치 및 컨테이너 실행)
+# BE 인스턴스 런치 템플릿 (Amazon Linux 2 AMI 사용, docker 및 codedeploy-agent 설치)
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "backend-"
   instance_type = "t3.medium"
@@ -134,7 +132,7 @@ EOF
   )
 }
 
-# Auto Scaling Group: 최소 2대, 최대 4대로 두 개의 서브넷에 배포하며 ALB Target Group 연결
+# BE Auto Scaling Group: 최소 2대, 최대 4대로 두 개의 서브넷에 배포하며 ALB Target Group 연결
 resource "aws_autoscaling_group" "backend_asg" {
   name                      = "backend-asg"
   desired_capacity          = 2
@@ -158,7 +156,7 @@ resource "aws_autoscaling_group" "backend_asg" {
   }
 }
 
-
+# CodeDeploy를 위한 BE instance Role 
 resource "aws_iam_role" "ec2_instance_role" {
   name = "ec2-instance-role-for-codedeploy"
   assume_role_policy = jsonencode({
@@ -173,6 +171,7 @@ resource "aws_iam_role" "ec2_instance_role" {
   })
 }
 
+# S3 Artifact에 접근하기 위한 BE instance Role
 resource "aws_iam_policy" "s3_artifact_policy" {
   name        = "s3-artifact-access-policy"
   description = "Allow EC2 instances to access CodePipeline artifact bucket"
@@ -190,17 +189,16 @@ resource "aws_iam_policy" "s3_artifact_policy" {
     ]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attach" {
   role       = aws_iam_role.ec2_instance_role.name
   policy_arn = aws_iam_policy.s3_artifact_policy.arn
 }
-
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
   name = "ec2-instance-profile-for-codedeploy"
   role = aws_iam_role.ec2_instance_role.name
 }
 
+# BE가 ECR에 접근하기 위한 정책
 resource "aws_iam_policy" "ecr_auth_policy" {
   name        = "ECRGetAuthPolicy"
   description = "Allow getting ECR authorization token"
@@ -215,7 +213,6 @@ resource "aws_iam_policy" "ecr_auth_policy" {
     ]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "ecr_auth_policy_attach" {
   role       = aws_iam_role.ec2_instance_role.name
   policy_arn = aws_iam_policy.ecr_auth_policy.arn

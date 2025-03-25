@@ -1,10 +1,12 @@
-# S3 Bucket: Artifact 저장소 #
+# FE Pipeline Artifact 저장소 S3
+resource "aws_s3_bucket" "codepipeline_fe_bucket" {
+  bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}" 
+}
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
-resource "aws_s3_bucket" "codepipeline_fe_bucket" {
-  bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}"  # 유니크한 이름으로 변경 필요
-}
+
+# FE Pipeline Artifact 저장소 S3 private ACL 지정
 resource "aws_s3_bucket_ownership_controls" "static_site_oc" {
   bucket = aws_s3_bucket.codepipeline_fe_bucket.id
   rule {
@@ -17,6 +19,8 @@ resource "aws_s3_bucket_acl" "static_site_acl" {
   bucket = aws_s3_bucket.codepipeline_fe_bucket.id
   acl    = "private"
 }
+
+# FE Pipeline Artifact 저장소 S3 버저닝 설정
 resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
   bucket = aws_s3_bucket.codepipeline_fe_bucket.id
   versioning_configuration {
@@ -159,7 +163,6 @@ resource "aws_iam_policy" "codepipeline_policy" {
     ]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach" {
   role       = aws_iam_role.codepipeline_role.name
   policy_arn = aws_iam_policy.codepipeline_policy.arn
@@ -204,9 +207,9 @@ resource "aws_codepipeline" "react_pipeline" {
       output_artifacts = ["source_output"]
 
       configuration = {
-        ConnectionArn     = aws_codestarconnections_connection.github.arn   # GitHub 사용자명으로 변경
-        FullRepositoryId  = "wcorn/toy-project-fe"                          # GitHub 저장소명으로 변경
-        BranchName        = "main"                                          # 사용할 브랜치
+        ConnectionArn     = aws_codestarconnections_connection.github.arn
+        FullRepositoryId  = "wcorn/toy-project-fe"
+        BranchName        = "main"
       }
     }
   }
