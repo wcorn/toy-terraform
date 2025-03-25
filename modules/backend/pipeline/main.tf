@@ -31,6 +31,7 @@ resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
 # ECR Repository
 resource "aws_ecr_repository" "backend_repo" {
   name = "backend-springboot"
+  force_delete = true
 }
 
 # IAM Role 및 Policy: CodeBuild
