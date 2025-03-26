@@ -16,11 +16,11 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "peter-terraformstate"
+    bucket = "peter-terraform-state-BNgzVHErjia"
     key  = "terraform/terraform.tfstate"
     region = "ap-northeast-2"
     encrypt = true
-    dynamodb_table = "peter-terraform-state"
+    dynamodb_table = "peter-terraform-state-BNgzVHErjia"
   }
 } 
 

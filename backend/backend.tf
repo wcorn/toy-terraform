@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terraform_state" { 
-  bucket = "peter-terraform-state"
+  bucket = "peter-terraform-state-BNgzVHErjia"
   force_destroy = false
 }
 
@@ -43,8 +43,8 @@ resource "aws_s3_bucket_policy" "terraform_state_policy" {
         "s3:PutObject"
       ],
       "Resource": [
-        "arn:aws:s3:::peter-terraform-state",
-        "arn:aws:s3:::peter-terraforms-tate/*"
+        "arn:aws:s3:::peter-terraform-state-BNgzVHErjia",
+        "arn:aws:s3:::peter-terraform-state-BNgzVHErjia/*"
       ]
     }
   ]
@@ -53,7 +53,7 @@ POLICY
 }
 
 resource "aws_dynamodb_table" "terraform_lock" {
-  name         = "peter-terraform-state"
+  name         = "peter-terraform-state-BNgzVHErjia"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
