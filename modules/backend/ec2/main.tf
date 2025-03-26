@@ -94,10 +94,13 @@ resource "aws_key_pair" "backend_key" {
   key_name   = "backend_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
-resource "local_file" "private_backend_key" {
-  filename        = "backend_key.pem"
-  content         = tls_private_key.ssh_key.private_key_pem
-  file_permission = "0600"
+resource "aws_secretsmanager_secret" "be_private_key" {
+  name = "be_private_key"
+}
+
+resource "aws_secretsmanager_secret_version" "be_private_key_version" {
+  secret_id     = aws_secretsmanager_secret.be_private_key.id
+  secret_string = tls_private_key.ssh_key.private_key_pem
 }
 
 # BE 인스턴스 런치 템플릿 (Amazon Linux 2 AMI 사용, docker 및 codedeploy-agent 설치)

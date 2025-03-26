@@ -38,10 +38,13 @@ resource "aws_key_pair" "openvpn" {
   key_name   = "openvpn_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
-resource "local_file" "private_key" {
-  filename        = "openvpn_key.pem"
-  content         = tls_private_key.ssh_key.private_key_pem
-  file_permission = "0600"
+resource "aws_secretsmanager_secret" "openvpn_private_key" {
+  name = "openvpn_private_key"
+}
+
+resource "aws_secretsmanager_secret_version" "openvpn_private_key_version" {
+  secret_id     = aws_secretsmanager_secret.openvpn_private_key.id
+  secret_string = tls_private_key.ssh_key.private_key_pem
 }
 
 # OpenVPN 서버 EC2 인스턴스
