@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "vpc_cidr" {
   description = "VPC CIDR block"
   type        = string
-  default     = "192.168.0.0/16"
+  default     = "10.0.0.0/16"
 }
 
 variable "public_subnets" {
@@ -19,12 +19,12 @@ variable "public_subnets" {
   }))
   default = [
     {
-      cidr                    = "192.168.10.0/24"
+      cidr                    = "10.0.10.0/24"
       az                      = "ap-northeast-2a"
       map_public_ip_on_launch = true
     },
     {
-      cidr                    = "192.168.20.0/24"
+      cidr                    = "10.0.20.0/24"
       az                      = "ap-northeast-2c"
       map_public_ip_on_launch = true
     }
@@ -39,11 +39,11 @@ variable "private_subnets" {
   }))
   default = [
     {
-      cidr = "192.168.210.0/24"
+      cidr = "10.0.110.0/24"
       az   = "ap-northeast-2a"
     },
     {
-      cidr = "192.168.220.0/24"
+      cidr = "10.0.120.0/24"
       az   = "ap-northeast-2c"
     }
   ]
@@ -57,11 +57,11 @@ variable "db_subnets" {
   }))
   default = [
     {
-      cidr = "192.168.110.0/24"
+      cidr = "10.0.210.0/24"
       az   = "ap-northeast-2a"
     },
     {
-      cidr = "192.168.120.0/24"
+      cidr = "10.0.220.0/24"
       az   = "ap-northeast-2c"
     }
   ]
@@ -77,13 +77,11 @@ variable "domain_name" {
   type        = string
   default     = "moaboa.shop"
 }
-
 variable "fe_domain_name" {
   description = "frontend 도메인 이름"
   type        = string
   default     = "front.moaboa.shop"
 }
-
 variable "be_domain_name" {
   description = "backend 도메인 이름"
   type        = string

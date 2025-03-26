@@ -8,12 +8,6 @@ output "public_subnet_a_id" {
   value = aws_subnet.public[0].id
 }
 
-output "db_subnet_ids" {
-  description = "DB의 Subnet ID 배열"
-  value = aws_subnet.db[*].id
-}
-
-
 output "public_subnet_ids" {
   description = "Public Subnet ID 배열"
   value = aws_subnet.public[*].id
@@ -28,10 +22,12 @@ output "private_route_table_id" {
   description = "Private routing table"
   value = aws_route_table.private.id
 }
+
 output "public_route_table_id" {
   description = "Public routing table"
   value = aws_route_table.public.id
 }
+
 output "vpc_cidr" {
   description = "VPC CIDR block"
   value = aws_vpc.this.cidr_block

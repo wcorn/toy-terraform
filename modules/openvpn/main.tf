@@ -38,8 +38,12 @@ resource "aws_key_pair" "openvpn" {
   key_name   = "openvpn_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
+resource "random_password" "ssh_key" {
+  length  = 16
+  special = false
+}
 resource "aws_secretsmanager_secret" "openvpn_private_key" {
-  name = "openvpn_private_key"
+  name = "openvpn_private_key-${random_password.ssh_key.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "openvpn_private_key_version" {

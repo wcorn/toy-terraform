@@ -17,7 +17,7 @@ terraform {
   }
   backend "s3" {
     bucket = "peter-terraform-state-bn2gz7v3he1rj0ia"
-    key  = "terraform/terraform.tfstate"
+    key  = "dev/terraform/terraform.tfstate"
     region = "ap-northeast-2"
     encrypt = true
     dynamodb_table = "peter-terraform-state-bn2gz7v3he1rj0ia"
@@ -30,39 +30,33 @@ provider "aws" {
 }
 
 module "vpc" {
-  source          = "./modules/vpc"
+  source          = "../../modules/vpc"
   vpc_cidr        = var.vpc_cidr
   public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
   db_subnets      = var.db_subnets
 }
 
-module "openvpn" {
-  source           = "./modules/openvpn"
-  vpc_id           = module.vpc.vpc_id
-  public_subnet_id = module.vpc.public_subnet_a_id
-}
-
 module "database" {
-  source        = "./modules/database"
+  source        = "../../modules/database"
   vpc_id        = module.vpc.vpc_id
   db_subnet_ids = module.vpc.db_subnet_ids
 }
 
 module "s3_fe" {
-  source             = "./modules/frontend/s3"
+  source             = "../../modules/frontend/s3"
   fe_domain_name     = var.fe_domain_name
   domain_name_prefix = var.domain_name_prefix
   cert_us_arn        = module.route53.cert_us_arn
 }
 
 module "pipeline_fe" {
-  source    = "./modules/frontend/pipeline"
+  source    = "../../modules/frontend/pipeline"
   fe_bucket = module.s3_fe.fe_bucket
 }
 
 module "route53" {
-  source                = "./modules/route53"
+  source                = "../../modules/route53"
   domain_name_prefix    = var.domain_name_prefix
   domain_name           = var.domain_name
   fe_domain_name        = var.fe_domain_name
@@ -74,7 +68,7 @@ module "route53" {
 }
 
 module "pipeline_be" {
-  source             = "./modules/backend/pipeline"
+  source             = "../../modules/backend/pipeline"
   backend_asg =     module.backend.backend_asg
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
@@ -84,10 +78,9 @@ module "pipeline_be" {
 }
 
 module "backend" {
-  source             = "./modules/backend/ec2"
+  source             = "../../modules/backend/ec2"
   vpc_id             = module.vpc.vpc_id
   cert_souel_arn     = module.route53.cert_seoul_arn
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
-  openvpn_sg_id = module.openvpn.openvpn_sg_id
 }

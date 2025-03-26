@@ -36,7 +36,7 @@ resource "aws_security_group" "backend_sg" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [var.openvpn_sg_id]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -84,7 +84,10 @@ resource "aws_lb_listener" "backend_listener" {
     target_group_arn = aws_lb_target_group.backend_tg.arn
   }
 }
-
+resource "random_password" "ssh_key" {
+  length  = 16
+  special = false
+}
 # BE SSH Key
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
@@ -95,7 +98,7 @@ resource "aws_key_pair" "backend_key" {
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 resource "aws_secretsmanager_secret" "be_private_key" {
-  name = "be_private_key"
+  name = "be_private_key-${random_password.ssh_key.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "be_private_key_version" {

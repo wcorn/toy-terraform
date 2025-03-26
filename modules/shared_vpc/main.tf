@@ -5,7 +5,7 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "main-vpc"
+    Name = "shared-vpc"
   }
 }
 
@@ -14,7 +14,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    Name = "main-IGW"
+    Name = "shared-IGW"
   }
 }
 
@@ -27,7 +27,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = var.public_subnets[count.index].map_public_ip_on_launch
 
   tags = {
-    Name = "public-${count.index}"
+    Name = "shared-public-${count.index}"
   }
 }
 
@@ -39,19 +39,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.private_subnets[count.index].az
 
   tags = {
-    Name = "private-${count.index}"
-  }
-}
-
-# DB Subnet
-resource "aws_subnet" "db" {
-  count             = length(var.db_subnets)
-  vpc_id            = aws_vpc.this.id
-  cidr_block        = var.db_subnets[count.index].cidr
-  availability_zone = var.db_subnets[count.index].az
-
-  tags = {
-    Name = "db-${count.index}"
+    Name = "shared-private-${count.index}"
   }
 }
 
@@ -63,7 +51,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name = "nat-gateway"
+    Name = "shared-nat-gateway"
   }
 }
 
@@ -77,7 +65,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "public-rt"
+    Name = "shared-public-rt"
   }
 }
 
@@ -98,7 +86,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "private-rt"
+    Name = "shared-private-rt"
   }
 }
 
@@ -106,12 +94,5 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   count          = length(aws_subnet.private)
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
-}
-
-# DB subnet은 private Route Table 중 첫번째를 사용
-resource "aws_route_table_association" "db" {
-  count          = length(aws_subnet.db)
-  subnet_id      = aws_subnet.db[count.index].id
   route_table_id = aws_route_table.private.id
 }
