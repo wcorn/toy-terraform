@@ -15,6 +15,13 @@ terraform {
       version = "~> 4.0"
     }
   }
+  backend "s3" {
+    bucket = "peter-terraformstate"
+    key  = "terraform/terraform.tfstate"
+    region = "ap-northeast-2"
+    encrypt = true
+    dynamodb_table = "peter-terraform-state"
+  }
 } 
 
 # AWS Provider
