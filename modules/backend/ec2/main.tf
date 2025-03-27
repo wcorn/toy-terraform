@@ -1,6 +1,6 @@
 # BE ALB용 보안 그룹
 resource "aws_security_group" "backend_alb_sg" {
-  name        = "backend_alb_sg"
+  name        = "be-alb-sg-${var.env}"
   description = "Allow HTTP inbound traffic"
   vpc_id      = var.vpc_id
 
@@ -18,13 +18,13 @@ resource "aws_security_group" "backend_alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = merge(var.common_tags, {
-    Name = "be-alb-sg"
+    Name = "be-alb-sg-${var.env}"
   })
 }
 
 # BE 인스턴스용 보안 그룹: ALB에서 오는 트래픽 허용 (8080 포트)
 resource "aws_security_group" "backend_sg" {
-  name        = "backend_sg"
+  name        = "be-sg-${var.env}"
   description = "Allow traffic from ALB"
   vpc_id      = var.vpc_id
 
@@ -49,24 +49,24 @@ resource "aws_security_group" "backend_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = merge(var.common_tags, {
-    Name = "be-sg"
+    Name = "be-sg-${var.env}"
   })
 }
 
 # BE ALB
 resource "aws_lb" "backend_alb" {
-  name               = "backend-alb"
+  name               = "be-alb-${var.env}"
   load_balancer_type = "application"
   subnets            = var.public_subnet_ids
   security_groups    = [aws_security_group.backend_alb_sg.id]
   tags = merge(var.common_tags, {
-    Name = "be-alb"
+    Name = "be-alb-${var.env}"
   })
 }
 
 # BE ALB Target Group (포트 8080)
 resource "aws_lb_target_group" "backend_tg" {
-  name     = "back-tg"
+  name     = "be-tg-${var.env}"
   port     = 8080
   protocol = "HTTP"
   vpc_id   = var.vpc_id
@@ -80,7 +80,7 @@ resource "aws_lb_target_group" "backend_tg" {
     timeout             = 5
   }
   tags = merge(var.common_tags, {
-    Name = "be-tg"
+    Name = "be-tg-${var.env}"
   })
 }
 
@@ -96,7 +96,7 @@ resource "aws_lb_listener" "backend_listener" {
     target_group_arn = aws_lb_target_group.backend_tg.arn
   }
   tags = merge(var.common_tags, {
-    Name = "be-alb-listner"
+    Name = "be-alb-listner-${var.env}"
   })
 }
 resource "random_password" "ssh_key" {
@@ -109,16 +109,16 @@ resource "tls_private_key" "ssh_key" {
   rsa_bits  = 4096
 }
 resource "aws_key_pair" "backend_key" {
-  key_name   = "backend_key"
+  key_name   = "be-key-${var.env}"
   public_key = tls_private_key.ssh_key.public_key_openssh
   tags = merge(var.common_tags, {
-    Name = "be-key"
+    Name = "be-key-${var.env}"
   })
 }
 resource "aws_secretsmanager_secret" "be_private_key" {
-  name = "be_private_key-${random_password.ssh_key.result}"
+  name = "be-key-secret-${var.env}-${random_password.ssh_key.result}"
   tags = merge(var.common_tags, {
-    Name = "be-key-secret"
+    Name = "be-key-secret-${var.env}"
   })
 }
 
@@ -129,7 +129,7 @@ resource "aws_secretsmanager_secret_version" "be_private_key_version" {
 
 # BE 인스턴스 런치 템플릿 (Amazon Linux 2 AMI 사용, docker 및 codedeploy-agent 설치)
 resource "aws_launch_template" "app_lt" {
-  name_prefix   = "backend-"
+  name_prefix   = "be-lt-${var.env}-"
   instance_type = "t3.medium"
   # 실제 사용하는 리전의 최신 Amazon Linux 2 AMI ID로 변경 필요
   image_id = "ami-062cddb9d94dcf95d"
@@ -158,13 +158,13 @@ sudo systemctl start codedeploy-agent
 EOF
   )
   tags = merge(var.common_tags, {
-    Name = "be-lt"
+    Name = "be-lt-${var.env}"
   })
 }
 
 # BE Auto Scaling Group: 최소 2대, 최대 4대로 두 개의 서브넷에 배포하며 ALB Target Group 연결
 resource "aws_autoscaling_group" "backend_asg" {
-  name                = "backend-asg"
+  name                = "backend-asg-${var.env}"
   desired_capacity    = 2
   min_size            = 2
   max_size            = 4
@@ -181,14 +181,14 @@ resource "aws_autoscaling_group" "backend_asg" {
 
   tag {
     key                 = "Name"
-    value               = "be-ec2"
+    value               = "be-ec2-${var.env}"
     propagate_at_launch = true
   }
 }
 
 # CodeDeploy를 위한 BE instance Role 
 resource "aws_iam_role" "ec2_instance_role" {
-  name = "ec2-instance-role-for-codedeploy"
+  name = "be-role-${var.env}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -200,13 +200,13 @@ resource "aws_iam_role" "ec2_instance_role" {
     }]
   })
   tags = merge(var.common_tags, {
-    Name = "be-role"
+    Name = "be-role-${var.env}"
   })
 }
 
 # S3 Artifact에 접근하기 위한 BE instance Role
 resource "aws_iam_policy" "s3_artifact_policy" {
-  name        = "s3-artifact-access-policy"
+  name        = "be-s3-policy-${var.env}"
   description = "Allow EC2 instances to access CodePipeline artifact bucket"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -222,7 +222,7 @@ resource "aws_iam_policy" "s3_artifact_policy" {
     ]
   })
   tags = merge(var.common_tags, {
-    Name = "be-s3-policy"
+    Name = "be-s3-policy-${var.env}"
   })
 }
 resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attach" {
@@ -230,16 +230,16 @@ resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attach" {
   policy_arn = aws_iam_policy.s3_artifact_policy.arn
 }
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "ec2-instance-profile-for-codedeploy"
+  name = "be-iam-profile-${var.env}"
   role = aws_iam_role.ec2_instance_role.name
   tags = merge(var.common_tags, {
-    Name = "be-iam-profile"
+    Name = "be-iam-profile-${var.env}"
   })
 }
 
 # BE가 ECR에 접근하기 위한 정책
 resource "aws_iam_policy" "ecr_auth_policy" {
-  name        = "ECRGetAuthPolicy"
+  name        = "be-ecr-policy-${var.env}"
   description = "Allow getting ECR authorization token"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -252,7 +252,7 @@ resource "aws_iam_policy" "ecr_auth_policy" {
     ]
   })
   tags = merge(var.common_tags, {
-    Name = "be-ecr-policy"
+    Name = "be-ecr-policy-${var.env}"
   })
 }
 resource "aws_iam_role_policy_attachment" "ecr_auth_policy_attach" {

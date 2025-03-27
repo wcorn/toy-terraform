@@ -1,10 +1,10 @@
 # OpenVPN  보안 그룹
 resource "aws_security_group" "openvpn_sg" {
-  name        = "openvpn-security-group"
+  name        = "openvpn-sg-${var.env}"
   description = "Security group for OpenVPN server"
   vpc_id      = var.vpc_id
   tags = merge(var.common_tags, {
-    Name = "openvpn-sg"
+    Name = "openvpn-sg-${var.env}"
   })
 }
 
@@ -38,10 +38,10 @@ resource "tls_private_key" "ssh_key" {
   rsa_bits  = 4096
 }
 resource "aws_key_pair" "openvpn" {
-  key_name   = "openvpn_key"
+  key_name   = "openvpn-key-${var.env}"
   public_key = tls_private_key.ssh_key.public_key_openssh
   tags = merge(var.common_tags, {
-    Name = "openvpn-key"
+    Name = "openvpn-key-${var.env}"
   })
 }
 resource "random_password" "ssh_key" {
@@ -49,9 +49,9 @@ resource "random_password" "ssh_key" {
   special = false
 }
 resource "aws_secretsmanager_secret" "openvpn_private_key" {
-  name = "openvpn_private_key-${random_password.ssh_key.result}"
+  name = "openvpn-key-${var.env}-${random_password.ssh_key.result}"
   tags = merge(var.common_tags, {
-    Name = "openvpn-key-sm"
+    Name = "openvpn-key-sm-${var.env}"
   })
 }
 
@@ -70,7 +70,7 @@ resource "aws_instance" "openvpn_server" {
   associate_public_ip_address = true
 
   tags = merge(var.common_tags, {
-    Name = "openvpn-ec2"
+    Name = "openvpn-ec2-${var.env}"
   })
 }
 
@@ -78,6 +78,6 @@ resource "aws_instance" "openvpn_server" {
 resource "aws_eip" "openvpn_eip" {
   instance = aws_instance.openvpn_server.id
   tags = merge(var.common_tags, {
-    Name = "openvpn-ip"
+    Name = "openvpn-ip-${var.env}"
   })
 }

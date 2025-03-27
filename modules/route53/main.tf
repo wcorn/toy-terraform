@@ -20,7 +20,7 @@ resource "aws_acm_certificate" "cert_us" {
     create_before_destroy = true
   }
   tags = merge(var.common_tags, {
-    Name = "route53-cert_us"
+    Name = "route53-cert_us-${var.env}"
   })
 }
 
@@ -34,7 +34,7 @@ resource "aws_acm_certificate" "cert_seoul" {
     create_before_destroy = true
   }
   tags = merge(var.common_tags, {
-    Name = "route53-cert_seoul"
+    Name = "route53-cert_seoul-${var.env}"
   })
 }
 

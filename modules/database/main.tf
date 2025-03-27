@@ -1,6 +1,6 @@
 # Database 보안 그룹
 resource "aws_security_group" "database" {
-  name        = "database-subnet-security-group"
+  name        = "db-sg-${var.env}"
   description = "Security group for database"
   vpc_id      = var.vpc_id
 
@@ -19,17 +19,17 @@ resource "aws_security_group" "database" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "db-sg"
+    Name = "db-sg-${var.env}"
   })
 }
 
 # DB Subnet Group
 resource "aws_db_subnet_group" "db_subnet_group" {
-  name       = "db_subnet_group"
+  name       = "db-sg-${var.env}"
   subnet_ids = var.db_subnet_ids
 
   tags = merge(var.common_tags, {
-    Name = "db-sg"
+    Name = "db-sg-${var.env}"
   })
 }
 
@@ -44,9 +44,9 @@ resource "random_password" "db_password_name" {
 }
 # Secrets Manager를 사용해 DB 접속 정보 저장
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "db/password-${random_password.db_password_name.result}"
+  name = "db/password-${var.env}-${random_password.db_password_name.result}"
   tags = merge(var.common_tags, {
-    Name = "db-password-sm"
+    Name = "db-password-sm-${var.env}"
   })
 }
 resource "aws_secretsmanager_secret_version" "db_password_version" {
@@ -59,7 +59,7 @@ resource "aws_secretsmanager_secret_version" "db_password_version" {
 
 # db 인스턴스 생성
 resource "aws_db_instance" "mydb" {
-  identifier             = "mydb"
+  identifier             = "db-${var.env}"
   engine                 = "mysql"
   engine_version         = "8.0"
   instance_class         = "db.t3.micro"
@@ -72,6 +72,6 @@ resource "aws_db_instance" "mydb" {
   db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
   skip_final_snapshot    = true # terraform destroy 편하게 하려는 이유. 실제 환경에서는 절대 금지
   tags = merge(var.common_tags, {
-    Name = "db-password"
+    Name = "db-${var.env}"
   })
 }

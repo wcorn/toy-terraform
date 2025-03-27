@@ -1,9 +1,9 @@
 # FE Pipeline Artifact 저장소 S3
 resource "aws_s3_bucket" "codepipeline_fe_bucket" {
-  bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}"
+  bucket = "cp-fe-s3-${var.env}-${random_id.bucket_suffix.hex}"
   force_destroy = true
   tags = merge(var.common_tags, {
-    Name = "cp-fe-s3"
+    Name = "cp-fe-s3-${var.env}"
   })
 }
 resource "random_id" "bucket_suffix" {
@@ -34,7 +34,7 @@ resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
 
 # IAM Role 및 Policy: CodeBuild 설정
 resource "aws_iam_role" "codebuild_role" {
-  name = "codebuild-react-role"
+  name = "cp-fe-cb-role-${var.env}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -46,11 +46,11 @@ resource "aws_iam_role" "codebuild_role" {
     }]
   })
   tags = merge(var.common_tags, {
-    Name = "cp-fe-cb-role"
+    Name = "cp-fe-cb-role-${var.env}"
   })
 }
 resource "aws_iam_policy" "codebuild_policy" {
-  name        = "codebuild-react-policy"
+  name        = "cp-fe-cb_policy-${var.env}"
   description = "Policy for CodeBuild project"
   policy      = jsonencode({
     Version = "2012-10-17",
@@ -77,7 +77,7 @@ resource "aws_iam_policy" "codebuild_policy" {
     ]
   })
   tags = merge(var.common_tags, {
-    Name = "cp-fe-cb_policy"
+    Name = "cp-fe-cb_policy-${var.env}"
   })
 }
 resource "aws_iam_role_policy_attachment" "codebuild_policy_attach" {
@@ -87,7 +87,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_policy_attach" {
 
 # CodeBuild Project: React 빌드 설정 
 resource "aws_codebuild_project" "react_build" {
-  name          = "react-build-project"
+  name          = "cp-fe-cb-${var.env}"
   description   = "Build project for React application"
   build_timeout = 20
   service_role  = aws_iam_role.codebuild_role.arn
@@ -123,13 +123,13 @@ artifacts:
 EOF
   }
   tags = merge(var.common_tags, {
-    Name = "cp-fe-cb"
+    Name = "cp-fe-cb-${var.env}"
   })
 }
 
 # IAM Role 및 Policy: CodePipeline 설정
 resource "aws_iam_role" "codepipeline_role" {
-  name = "codepipeline-react-role"
+  name = "cp-fe-role-${var.env}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -141,11 +141,11 @@ resource "aws_iam_role" "codepipeline_role" {
     }]
   })
   tags = merge(var.common_tags, {
-    Name = "cp-fe-role"
+    Name = "cp-fe-role-${var.env}"
   })
 }
 resource "aws_iam_policy" "codepipeline_policy" {
-  name        = "codepipeline-react-policy"
+  name        = "cp-fe-policy-${var.env}"
   description = "Policy for CodePipeline"
   policy      = jsonencode({
     Version = "2012-10-17",
@@ -179,7 +179,7 @@ resource "aws_iam_policy" "codepipeline_policy" {
     ]
   })
   tags = merge(var.common_tags, {
-    Name = "cp-fe-policy"
+    Name = "cp-fe-policy-${var.env}"
   })
 }
 resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach" {
@@ -189,16 +189,16 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach" {
 
 # github connection
 resource "aws_codestarconnections_connection" "github" {
-  name          = "wcorn"
+  name          = "cp-fe-github-wcorn-${var.env}"
   provider_type = "GitHub"
   tags = merge(var.common_tags, {
-    Name = "cp-fe-github-wcorn"
+    Name = "cp-fe-github-wcorn-${var.env}"
   })
 }
 
 # CodePipeline: CI/CD 파이프라인 구성 
 resource "aws_codepipeline" "react_pipeline" {
-  name     = "react-codepipeline"
+  name     = "cp-fe-${var.env}"
   pipeline_type = "V2"
   role_arn = aws_iam_role.codepipeline_role.arn
 
@@ -272,6 +272,6 @@ resource "aws_codepipeline" "react_pipeline" {
     }
   }
   tags = merge(var.common_tags, {
-    Name = "cp-fe"
+    Name = "cp-fe-${var.env}"
   })
 }

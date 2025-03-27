@@ -1,9 +1,9 @@
 # FE 정적 웹호스팅 S3
 resource "aws_s3_bucket" "static_site" {
-  bucket = "peter-frontend-ds3szlfa9q"  # 고유한 버킷 이름 사용
+  bucket = "fe-s3-${var.env}"  # 고유한 버킷 이름 사용
   force_destroy = true
   tags = merge(var.common_tags, {
-    Name = "fe-s3"
+    Name = "fe-s3-${var.env}"
   })
 }
 
@@ -116,7 +116,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     minimum_protocol_version = "TLSv1.2_2021"
   }
   tags = merge(var.common_tags, {
-    Name = "fe-cdn"
+    Name = "fe-cdn-${var.env}"
   })
 }
 

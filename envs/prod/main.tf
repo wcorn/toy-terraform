@@ -17,7 +17,7 @@ terraform {
   }
   backend "s3" {
     bucket         = "peter-terraform-state-bn2gz7v3he1rj0ia"
-    key            = "dev/terraform/terraform.tfstate"
+    key            = "prod/terraform/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
     dynamodb_table = "peter-terraform-state-bn2gz7v3he1rj0ia"

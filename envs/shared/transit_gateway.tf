@@ -28,6 +28,16 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "dev_attachment" {
   }
 }
 
+# PROD VPC Attachment (스포크 역할)
+resource "aws_ec2_transit_gateway_vpc_attachment" "prod_attachment" {
+  transit_gateway_id = aws_ec2_transit_gateway.tgw.id
+  vpc_id             = data.terraform_remote_state.prod.outputs.vpc_id
+  subnet_ids         = data.terraform_remote_state.prod.outputs.private_subnet_ids
+  tags = {
+    Name = "prod-tgw-attachment"
+  }
+}
+
 # 허브용 라우트 테이블 (Shared VPC)
 resource "aws_ec2_transit_gateway_route_table" "hub_rt" {
   transit_gateway_id = aws_ec2_transit_gateway.tgw.id
@@ -54,13 +64,21 @@ resource "aws_ec2_transit_gateway_route_table_association" "dev_assoc" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.dev_attachment.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke_rt.id
 }
-
+resource "aws_ec2_transit_gateway_route_table_association" "prod_assoc" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.prod_attachment.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke_rt.id
+}
 # Propagation: 스포크의 경로 정보를 허브로 전파 및 허브의 경로 정보를 스포크로 전파
 # (Dev/Prod → Shared)
 resource "aws_ec2_transit_gateway_route_table_propagation" "dev_to_hub" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.dev_attachment.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub_rt.id
 }
+resource "aws_ec2_transit_gateway_route_table_propagation" "prod_to_hub" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.prod_attachment.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub_rt.id
+}
+
 
 # (Shared → Dev/Prod)
 resource "aws_ec2_transit_gateway_route_table_propagation" "shared_to_spoke" {
@@ -75,8 +93,14 @@ resource "aws_ec2_transit_gateway_route" "hub_to_dev" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.dev_attachment.id
 }
 
+resource "aws_ec2_transit_gateway_route" "hub_to_prod" {
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub_rt.id
+  destination_cidr_block         = data.terraform_remote_state.prod.outputs.vpc_cidr
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.prod_attachment.id
+}
+
 # [스포크 라우트 테이블]: Dev와 Prod는 오직 Shared VPC로의 경로만 가지도록 설정
-resource "aws_ec2_transit_gateway_route" "spoke_to_shared_from_dev" {
+resource "aws_ec2_transit_gateway_route" "spoke_to_shared_from_dev_prod" {
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke_rt.id
   destination_cidr_block         = module.vpc.vpc_cidr
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.shared_attachment.id
@@ -103,5 +127,29 @@ resource "aws_route" "shared_private_to_dev" {
 resource "aws_route" "shared_public_to_dev" {
   route_table_id         = module.vpc.public_route_table_id
   destination_cidr_block = data.terraform_remote_state.dev.outputs.vpc_cidr
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "prod_private_to_shared" {
+  route_table_id         = data.terraform_remote_state.prod.outputs.private_route_table_id
+  destination_cidr_block = module.vpc.vpc_cidr
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "prod_public_to_shared" {
+  route_table_id         = data.terraform_remote_state.prod.outputs.public_route_table_id
+  destination_cidr_block = module.vpc.vpc_cidr
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "shared_private_to_prod" {
+  route_table_id         = module.vpc.private_route_table_id
+  destination_cidr_block = data.terraform_remote_state.prod.outputs.vpc_cidr
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "shared_public_to_prod" {
+  route_table_id         = module.vpc.public_route_table_id
+  destination_cidr_block = data.terraform_remote_state.prod.outputs.vpc_cidr
   transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
 }

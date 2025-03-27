@@ -5,7 +5,7 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true
 
   tags = merge(var.common_tags, {
-    Name = "vpc"
+    Name = "vpc-${var.env}"
   })
 }
 
@@ -14,7 +14,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.this.id
 
   tags = merge(var.common_tags, {
-    Name = "igw"
+    Name = "igw-${var.env}"
   })
 }
 
@@ -27,7 +27,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = var.public_subnets[count.index].map_public_ip_on_launch
 
   tags = merge(var.common_tags, {
-    Name = "public-${count.index}"
+    Name = "public-${count.index}-${var.env}"
   })
 }
 
@@ -39,7 +39,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.private_subnets[count.index].az
 
   tags = merge(var.common_tags, {
-    Name = "private-${count.index}"
+    Name = "private-${count.index}-${var.env}"
   })
 }
 
@@ -51,7 +51,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public[0].id
 
   tags = merge(var.common_tags, {
-    Name = "nat"
+    Name = "nat-${var.env}"
   })
 }
 
@@ -65,7 +65,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "public-rt"
+    Name = "public-rt-${var.env}"
   })
 }
 
@@ -86,7 +86,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "private-rt"
+    Name = "private-rt-${var.env}"
   })
 }
 
