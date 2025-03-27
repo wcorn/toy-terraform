@@ -49,3 +49,8 @@ variable "openvpn_egress_rules" {
     all = { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] },
   }
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

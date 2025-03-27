@@ -27,3 +27,8 @@ variable "db_subnets" {
     az   = string
   }))
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

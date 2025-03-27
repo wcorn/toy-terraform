@@ -18,3 +18,8 @@ variable "cert_souel_arn" {
   description = "moaboa의 seoul 인증서"
   type = string
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

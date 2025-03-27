@@ -26,3 +26,8 @@ variable "db_instance_password" {
   description = "database의 password"
   type = string
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

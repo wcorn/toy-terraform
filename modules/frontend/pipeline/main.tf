@@ -2,6 +2,9 @@
 resource "aws_s3_bucket" "codepipeline_fe_bucket" {
   bucket = "codepipeline-artifact-bucket-fe-${random_id.bucket_suffix.hex}"
   force_destroy = true
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-s3"
+  })
 }
 resource "random_id" "bucket_suffix" {
   byte_length = 4
@@ -42,6 +45,9 @@ resource "aws_iam_role" "codebuild_role" {
       Action = "sts:AssumeRole"
     }]
   })
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-cb-role"
+  })
 }
 resource "aws_iam_policy" "codebuild_policy" {
   name        = "codebuild-react-policy"
@@ -69,6 +75,9 @@ resource "aws_iam_policy" "codebuild_policy" {
         Resource = "*"
       }
     ]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-cb_policy"
   })
 }
 resource "aws_iam_role_policy_attachment" "codebuild_policy_attach" {
@@ -113,6 +122,9 @@ artifacts:
     - '**/*'
 EOF
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-cb"
+  })
 }
 
 # IAM Role 및 Policy: CodePipeline 설정
@@ -127,6 +139,9 @@ resource "aws_iam_role" "codepipeline_role" {
       },
       Action = "sts:AssumeRole"
     }]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-role"
   })
 }
 resource "aws_iam_policy" "codepipeline_policy" {
@@ -163,6 +178,9 @@ resource "aws_iam_policy" "codepipeline_policy" {
       }
     ]
   })
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-policy"
+  })
 }
 resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach" {
   role       = aws_iam_role.codepipeline_role.name
@@ -173,6 +191,9 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach" {
 resource "aws_codestarconnections_connection" "github" {
   name          = "wcorn"
   provider_type = "GitHub"
+  tags = merge(var.common_tags, {
+    Name = "cp-fe-github-wcorn"
+  })
 }
 
 # CodePipeline: CI/CD 파이프라인 구성 
@@ -250,4 +271,7 @@ resource "aws_codepipeline" "react_pipeline" {
       }
     }
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-fe"
+  })
 }

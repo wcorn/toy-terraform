@@ -87,3 +87,12 @@ variable "be_domain_name" {
   type        = string
   default     = "backend.moaboa.shop"
 }
+
+variable "common_tags" {
+  description = "모든 리소스에 적용할 공통 태그"
+  type        = map(string)
+  default = {
+    Environment = "dev"
+    Owner       = "peter"
+  }
+}

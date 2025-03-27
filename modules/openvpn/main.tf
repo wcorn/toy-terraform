@@ -3,6 +3,9 @@ resource "aws_security_group" "openvpn_sg" {
   name        = "openvpn-security-group"
   description = "Security group for OpenVPN server"
   vpc_id      = var.vpc_id
+  tags = merge(var.common_tags, {
+    Name = "openvpn-sg"
+  })
 }
 
 # OpenVPN 보안그룹 ingress 규칙 
@@ -37,6 +40,9 @@ resource "tls_private_key" "ssh_key" {
 resource "aws_key_pair" "openvpn" {
   key_name   = "openvpn_key"
   public_key = tls_private_key.ssh_key.public_key_openssh
+  tags = merge(var.common_tags, {
+    Name = "openvpn-key"
+  })
 }
 resource "random_password" "ssh_key" {
   length  = 16
@@ -44,6 +50,9 @@ resource "random_password" "ssh_key" {
 }
 resource "aws_secretsmanager_secret" "openvpn_private_key" {
   name = "openvpn_private_key-${random_password.ssh_key.result}"
+  tags = merge(var.common_tags, {
+    Name = "openvpn-key-sm"
+  })
 }
 
 resource "aws_secretsmanager_secret_version" "openvpn_private_key_version" {
@@ -60,12 +69,15 @@ resource "aws_instance" "openvpn_server" {
   key_name                    = aws_key_pair.openvpn.key_name
   associate_public_ip_address = true
 
-  tags = {
-    Name = "OpenVPN-Server"
-  }
+  tags = merge(var.common_tags, {
+    Name = "openvpn-ec2"
+  })
 }
 
 # Elastic IP 할당
 resource "aws_eip" "openvpn_eip" {
   instance = aws_instance.openvpn_server.id
+  tags = merge(var.common_tags, {
+    Name = "openvpn-ip"
+  })
 }

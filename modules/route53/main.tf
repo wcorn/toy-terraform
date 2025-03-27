@@ -19,6 +19,9 @@ resource "aws_acm_certificate" "cert_us" {
   lifecycle {
     create_before_destroy = true
   }
+  tags = merge(var.common_tags, {
+    Name = "route53-cert_us"
+  })
 }
 
 # 서울 인증서 요청 (DNS 검증 방식)
@@ -30,6 +33,9 @@ resource "aws_acm_certificate" "cert_seoul" {
   lifecycle {
     create_before_destroy = true
   }
+  tags = merge(var.common_tags, {
+    Name = "route53-cert_seoul"
+  })
 }
 
 # Route53 Hosted Zone 데이터 조회 (공용)

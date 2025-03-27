@@ -37,3 +37,8 @@ variable "be_alb_zone_id" {
   description = "CloudFront 배포의 Hosted Zone ID"
   type        = string
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

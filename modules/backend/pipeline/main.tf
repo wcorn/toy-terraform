@@ -4,8 +4,11 @@ resource "random_id" "bucket_suffix" {
 }
 
 resource "aws_s3_bucket" "codepipeline_backend_bucket" {
-  bucket = "codepipeline-artifact-bucket-backend-${random_id.bucket_suffix.hex}"
+  bucket        = "codepipeline-artifact-bucket-backend-${random_id.bucket_suffix.hex}"
   force_destroy = true
+  tags = merge(var.common_tags, {
+    Name = "cp-be-s3"
+  })
 }
 
 resource "aws_s3_bucket_ownership_controls" "backend_bucket_oc" {
@@ -30,8 +33,11 @@ resource "aws_s3_bucket_versioning" "codepipeline_versioning" {
 
 # ECR Repository
 resource "aws_ecr_repository" "backend_repo" {
-  name = "backend-springboot"
+  name         = "backend-springboot"
   force_delete = true
+  tags = merge(var.common_tags, {
+    Name = "be-ecr"
+  })
 }
 
 # IAM Role 및 Policy: CodeBuild
@@ -44,6 +50,9 @@ resource "aws_iam_role" "codebuild_backend_role" {
       Principal = { Service = "codebuild.amazonaws.com" },
       Action    = "sts:AssumeRole"
     }]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-role-cd"
   })
 }
 resource "aws_iam_policy" "codebuild_backend_policy" {
@@ -73,6 +82,9 @@ resource "aws_iam_policy" "codebuild_backend_policy" {
       }
     ]
   })
+  tags = merge(var.common_tags, {
+    Name = "cp-policy-cd"
+  })
 }
 resource "aws_iam_role_policy_attachment" "codebuild_backend_policy_attach" {
   role       = aws_iam_role.codebuild_backend_role.name
@@ -97,6 +109,9 @@ resource "aws_iam_role" "ecr_role" {
         Action = "sts:AssumeRole"
       }
     ]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-role-ecr"
   })
 }
 resource "aws_iam_policy" "ecr_policy" {
@@ -125,6 +140,9 @@ resource "aws_iam_policy" "ecr_policy" {
         Resource = "*"
       }
     ]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-policy-ecr"
   })
 }
 resource "aws_iam_role_policy_attachment" "ecr_role_policy_attach" {
@@ -176,6 +194,9 @@ resource "aws_codebuild_project" "backend_build" {
     git_clone_depth = 1
     buildspec       = "buildspec.yml"
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be-cb"
+  })
 }
 
 # IAM Role 및 Policy: CodePipeline
@@ -188,6 +209,9 @@ resource "aws_iam_role" "codepipeline_backend_role" {
       Principal = { Service = "codepipeline.amazonaws.com" },
       Action    = "sts:AssumeRole"
     }]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-be-role"
   })
 }
 resource "aws_iam_policy" "codepipeline_backend_policy" {
@@ -229,6 +253,9 @@ resource "aws_iam_policy" "codepipeline_backend_policy" {
       }
     ]
   })
+  tags = merge(var.common_tags, {
+    Name = "cp-be-policy"
+  })
 }
 resource "aws_iam_role_policy_attachment" "codepipeline_backend_policy_attach" {
   role       = aws_iam_role.codepipeline_backend_role.name
@@ -246,6 +273,9 @@ resource "aws_iam_role" "codedeploy_backend_role" {
       Action    = "sts:AssumeRole"
     }]
   })
+  tags = merge(var.common_tags, {
+    Name = "cp-role-cd"
+  })
 }
 resource "aws_iam_policy" "codedeploy_autoscaling_policy" {
   name        = "codedeploy-autoscaling-policy"
@@ -259,6 +289,9 @@ resource "aws_iam_policy" "codedeploy_autoscaling_policy" {
         Resource = "*"
       }
     ]
+  })
+  tags = merge(var.common_tags, {
+    Name = "cp-be-asg"
   })
 }
 resource "aws_iam_role_policy_attachment" "codedeploy_autoscaling_policy_attach" {
@@ -274,12 +307,18 @@ resource "aws_iam_role_policy_attachment" "codedeploy_backend_role_attach" {
 resource "aws_codestarconnections_connection" "github" {
   name          = "wcorn"
   provider_type = "GitHub"
+  tags = merge(var.common_tags, {
+    Name = "cs-github_wcorn"
+  })
 }
 
 # CodeDeploy: Application 및 Deployment Group
 resource "aws_codedeploy_app" "backend_deploy_app" {
   name             = "backend-codedeploy-app"
   compute_platform = "Server"
+  tags = merge(var.common_tags, {
+    Name = "cp-be-cd_group"
+  })
 }
 
 # ALB용 보안 그룹 (HTTP 80 포트 오픈)
@@ -301,6 +340,9 @@ resource "aws_security_group" "alb_deploy_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be-deploy_alb-sg"
+  })
 }
 
 # Deploy ALB 
@@ -309,6 +351,9 @@ resource "aws_lb" "backend_deploy_alb" {
   load_balancer_type = "application"
   subnets            = var.private_subnet_ids
   security_groups    = [aws_security_group.alb_deploy_sg.id]
+  tags = merge(var.common_tags, {
+    Name = "cp-be-deploy_alb"
+  })
 }
 
 # Deploy ALB Target Group
@@ -326,6 +371,9 @@ resource "aws_lb_target_group" "backend_deploy_tg" {
     interval            = 30
     timeout             = 5
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be-deploy_alb_tg"
+  })
 }
 
 # Deploy ALB Listener
@@ -338,13 +386,16 @@ resource "aws_lb_listener" "backend_deploy_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend_deploy_tg.arn
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be-deploy_alb_listener"
+  })
 }
 
 resource "aws_codedeploy_deployment_group" "backend_deployment_group" {
   app_name              = aws_codedeploy_app.backend_deploy_app.name
   deployment_group_name = "backend-deployment-group"
   service_role_arn      = aws_iam_role.codedeploy_backend_role.arn
-  autoscaling_groups = [var.backend_asg]
+  autoscaling_groups    = [var.backend_asg]
 
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {
@@ -361,6 +412,9 @@ resource "aws_codedeploy_deployment_group" "backend_deployment_group" {
       name = aws_lb.backend_deploy_alb.name
     }
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be-cd_deploy_group"
+  })
 }
 
 # CodePipeline: CI/CD 파이프라인 구성 (Backend)
@@ -434,4 +488,7 @@ resource "aws_codepipeline" "backend_pipeline" {
       }
     }
   }
+  tags = merge(var.common_tags, {
+    Name = "cp-be"
+  })
 }

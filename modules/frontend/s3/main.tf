@@ -2,6 +2,9 @@
 resource "aws_s3_bucket" "static_site" {
   bucket = "peter-frontend-ds3szlfa9q"  # 고유한 버킷 이름 사용
   force_destroy = true
+  tags = merge(var.common_tags, {
+    Name = "fe-s3"
+  })
 }
 
 # FE S3 private ACL 지정
@@ -112,6 +115,9 @@ resource "aws_cloudfront_distribution" "cdn" {
     ssl_support_method = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
+  tags = merge(var.common_tags, {
+    Name = "fe-cdn"
+  })
 }
 
 # S3와 CloudFront 연결 (CloudFront에 S3 Get 권한 부여)

@@ -12,3 +12,8 @@ variable "cert_us_arn" {
   description = "CloudFront에서 사용할 ACM 인증서 ARN"
   type        = string
 }
+
+variable "common_tags" {
+  description = "기본 태그"
+  type = map(string)
+}

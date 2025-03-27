@@ -18,9 +18,9 @@ resource "aws_security_group" "database" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "database-sg"
-  }
+  tags = merge(var.common_tags, {
+    Name = "db-sg"
+  })
 }
 
 # DB Subnet Group
@@ -28,9 +28,9 @@ resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "db_subnet_group"
   subnet_ids = var.db_subnet_ids
 
-  tags = {
-    Name = "db_subnet_group"
-  }
+  tags = merge(var.common_tags, {
+    Name = "db-sg"
+  })
 }
 
 # 랜덤 비밀번호 생성 
@@ -45,9 +45,12 @@ resource "random_password" "db_password_name" {
 # Secrets Manager를 사용해 DB 접속 정보 저장
 resource "aws_secretsmanager_secret" "db_password" {
   name = "db/password-${random_password.db_password_name.result}"
+  tags = merge(var.common_tags, {
+    Name = "db-password-sm"
+  })
 }
 resource "aws_secretsmanager_secret_version" "db_password_version" {
-  secret_id     = aws_secretsmanager_secret.db_password.id
+  secret_id = aws_secretsmanager_secret.db_password.id
   secret_string = jsonencode({
     username = "admin"
     password = random_password.db.result
@@ -63,9 +66,12 @@ resource "aws_db_instance" "mydb" {
   allocated_storage      = 20
   username               = "admin"
   password               = jsondecode(aws_secretsmanager_secret_version.db_password_version.secret_string)["password"]
-  db_name = "test"
+  db_name                = "test"
   publicly_accessible    = false
   vpc_security_group_ids = [aws_security_group.database.id]
   db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
-  skip_final_snapshot    = true  # terraform destroy 편하게 하려는 이유 실제 환경에서는 절대 금지
+  skip_final_snapshot    = true # terraform destroy 편하게 하려는 이유. 실제 환경에서는 절대 금지
+  tags = merge(var.common_tags, {
+    Name = "db-password"
+  })
 }

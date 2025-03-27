@@ -4,18 +4,18 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = {
-    Name = "main-vpc"
-  }
+  tags = merge(var.common_tags, {
+    Name = "vpc"
+  })
 }
 
 # Public Subnet의 IGW
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.this.id
 
-  tags = {
-    Name = "main-IGW"
-  }
+  tags = merge(var.common_tags, {
+    Name = "igw"
+  })
 }
 
 # Public Subnet
@@ -26,9 +26,9 @@ resource "aws_subnet" "public" {
   availability_zone       = var.public_subnets[count.index].az
   map_public_ip_on_launch = var.public_subnets[count.index].map_public_ip_on_launch
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "public-${count.index}"
-  }
+  })
 }
 
 # Private Subnet
@@ -38,9 +38,9 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnets[count.index].cidr
   availability_zone = var.private_subnets[count.index].az
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "private-${count.index}"
-  }
+  })
 }
 
 # DB Subnet
@@ -50,9 +50,9 @@ resource "aws_subnet" "db" {
   cidr_block        = var.db_subnets[count.index].cidr
   availability_zone = var.db_subnets[count.index].az
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "db-${count.index}"
-  }
+  })
 }
 
 # NAT Gateway Elastic IP
@@ -62,9 +62,9 @@ resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
 
-  tags = {
-    Name = "nat-gateway"
-  }
+  tags = merge(var.common_tags, {
+    Name = "nat"
+  })
 }
 
 # Public Route Table
@@ -76,9 +76,9 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.igw.id
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "public-rt"
-  }
+  })
 }
 
 # Public subnet에 Route Table 연결
@@ -97,9 +97,9 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.nat.id
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "private-rt"
-  }
+  })
 }
 
 # Private subnet에 Route Table 연결
