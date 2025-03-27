@@ -35,12 +35,14 @@ module "vpc" {
   public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
   db_subnets      = var.db_subnets
+  common_tags = var.common_tags
 }
 
 module "database" {
   source        = "../../modules/database"
   vpc_id        = module.vpc.vpc_id
   db_subnet_ids = module.vpc.db_subnet_ids
+  common_tags = var.common_tags
 }
 
 module "s3_fe" {
@@ -48,11 +50,13 @@ module "s3_fe" {
   fe_domain_name     = var.fe_domain_name
   domain_name_prefix = var.domain_name_prefix
   cert_us_arn        = module.route53.cert_us_arn
+  common_tags = var.common_tags
 }
 
 module "pipeline_fe" {
   source    = "../../modules/frontend/pipeline"
   fe_bucket = module.s3_fe.fe_bucket
+  common_tags = var.common_tags
 }
 
 module "route53" {
@@ -65,6 +69,7 @@ module "route53" {
   be_domain_name        = var.be_domain_name
   be_alb_dns_name       = module.backend.be_alb_dns_name
   be_alb_zone_id        = module.backend.be_alb_zone_id
+  common_tags = var.common_tags
 }
 
 module "pipeline_be" {
@@ -75,6 +80,7 @@ module "pipeline_be" {
   db_instance_endpoint = module.database.db_instance_endpoint
   db_instance_username = module.database.db_instance_username
   db_instance_password = module.database.db_instance_password
+  common_tags = var.common_tags
 }
 
 module "backend" {
