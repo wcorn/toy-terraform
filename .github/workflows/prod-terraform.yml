@@ -17,7 +17,7 @@ env:
   
 jobs:
   terraform:
-    name: 'Terraform'
+    name: 'Prod-Terraform'
     runs-on: ubuntu-22.04
 
     defaults:
