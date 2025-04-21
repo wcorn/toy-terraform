@@ -6,9 +6,9 @@
 
 ## Application Repository
 ### FE 
-https://github.com/wcorn/toy-project-fe 
+https://github.com/wcorn/toy-terraform-fe 
 ### BE 
-https://github.com/wcorn/toy-project-be
+https://github.com/wcorn/toy-terraform-be
 
 ## 디렉터리 구조
 ```
